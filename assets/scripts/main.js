@@ -44,16 +44,25 @@ function initializeServiceWorker() {
   /*******************/
   // We first must register our ServiceWorker here before any of the code in
   // sw.js is executed.
-  // B1. TODO - Check if 'serviceWorker' is supported in the current browser
-  // B2. TODO - Listen for the 'load' event on the window object.
-  // Steps B3-B6 will be *inside* the event listener's function created in B2
-  // B3. TODO - Register './sw.js' as a service worker (The MDN article
-  //            "Using Service Workers" will help you here)
-  // B4. TODO - Once the service worker has been successfully registered, console
-  //            log that it was successful.
-  // B5. TODO - In the event that the service worker registration fails, console
-  //            log that it has failed.
-  // STEPS B6 ONWARDS WILL BE IN /sw.js
+  // B1. Check  'serviceWorker' is supported in the current browser
+  if ('serviceWorker' in navigator) {
+    // B2. Listen for the 'load' event on the window object.
+    window.addEventListener('load', async () => {
+      try {
+        // B3. Register './sw.js' as a service worker
+        await navigator.serviceWorker.register('./sw.js');
+
+        // B4. Once the service worker has been successfully registered, console
+        //     log that it was successful.
+        console.log('Service worker registration successful');
+      } catch (err) {
+        // B5. In the event that the service worker registration fails, console
+        //     log that it has failed.
+        console.log('Service worker registration failed');
+        console.error(err);
+      }
+    });
+  }
 }
 
 /**
@@ -65,23 +74,49 @@ function initializeServiceWorker() {
  * @returns {Array<Object>} An array of recipes found in localStorage
  */
 async function getRecipes() {
+  // EXPOSE - START (All expose numbers start with A)
+  // A1. Check local storage to see if there are any recipes.
+  //     If there are recipes, return them.
   let storedRecipes = localStorage.getItem('recipes');
   if (storedRecipes) {
     return JSON.parse(storedRecipes);
   }
+
+  /**************************/
+  // The rest of this method will be concerned with requesting the recipes
+  // from the network
+  // A2. Create an empty array to hold the recipes that you will fetch
   let recipes = [];
+
+  // A3. Return a new Promise.
   return new Promise(async (resolve, reject) => {
+    /**************************/
+    // A4. Loop through each recipe in the RECIPE_URLS array constant
+    //     declared above
     for (let i = 0; i < RECIPE_URLS.length; i++) {
+      // A5. Since we are going to be dealing with asynchronous code, create
+      //     a try / catch block.
       try {
+        // A6. For each URL in that array, fetch the URL.
         let response = await fetch(RECIPE_URLS[i]);
+
+        // A7. For each fetch response, retrieve the JSON from it using .json().
         let recipe = await response.json();
+
+        // A8. Add the new recipe to the recipes array.
         recipes.push(recipe);
+
+        // A9. Check to see if you have finished retrieving all of the recipes.
+        //     If you have, save the recipes to storage and resolve the Promise.
         if (recipes.length === RECIPE_URLS.length) {
           saveRecipesToStorage(recipes);
           resolve(recipes);
         }
       } catch (err) {
+        // A10. Log any errors from catch using console.error.
         console.error(err);
+
+        // A11. Pass any errors to the Promise's reject() function.
         reject(err);
       }
     }
